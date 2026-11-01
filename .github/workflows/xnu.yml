@@ -115,6 +115,27 @@ jobs:
             -C .. sdk-kernel-platform
           ls -la buildtree.tgz
 
+      - name: Upload kernel
+        if: always()
+        shell: bash
+        run: |
+          set -euxo pipefail
+          OUT="dxb/build/xnu.obj/DEVELOPMENT_ARM64_VEUX"
+          mkdir -p kernel-out
+          for f in kernel.development.veux kernel.development.veux.unstripped; do
+            if [ -f "$OUT/$f" ]; then cp "$OUT/$f" kernel-out/; fi
+          done
+          ls -la kernel-out || true
+
+      - name: Upload kernel artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xnu-kernel
+          path: kernel-out
+          if-no-files-found: warn
+          retention-days: 7
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
