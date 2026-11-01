@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euxo pipefail
           ls -d /Applications/Xcode*.app || true
-          XC=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1 || true)
+          XC=/Applications/Xcode_15.4.app
           if [ -z "$XC" ]; then
             echo "No Xcode found on this runner"
             exit 1
