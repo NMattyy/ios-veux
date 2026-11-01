@@ -20,7 +20,7 @@
  }
 --- /dev/null
 +++ b/bsd/dev/veux_bt.c
-@@ -0,0 +1,626 @@
+@@ -0,0 +1,630 @@
 +/*
 + * VEUX WCN3990 Bluetooth bring-up, step 1 - UART, power pulses, EDL version.
 + *
@@ -50,6 +50,10 @@
 +#include <sys/errno.h>
 +#include <kern/clock.h>
 +#include <kern/thread.h>
++#include <kern/bits.h>
++#ifndef GENMASK
++#define GENMASK(h, l) ((~0ULL >> (63 - (h))) & (~0ULL << (l)))
++#endif
 +#include <kern/sched_prim.h>
 +#include <machine/machine_routines.h>
 +#include <pexpert/pexpert.h>
