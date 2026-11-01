@@ -2,13 +2,14 @@ diff --git a/bsd/dev/veux_bt.c b/bsd/dev/veux_bt.c
 index 813b6f0..35abd1c 100644
 --- a/bsd/dev/veux_bt.c
 +++ b/bsd/dev/veux_bt.c
-@@ -34,6 +34,9 @@
+@@ -34,6 +34,10 @@
  extern vm_offset_t ml_io_map(vm_offset_t phys_addr, vm_size_t size);
  extern kern_return_t thread_terminate(thread_t);
  void veux_bt_init(void);
 +void veux_bt_hci_send(const uint8_t *data, uint32_t len);
 +void veux_bt_hci_set_rx_handler(void (*handler)(const uint8_t *, uint32_t, void *), void *context);
 +unsigned veux_bt_hci_poll(void);
++static void bt_rx_dispatch(void);
  
  #define BT_SE_PA        0x04a84000u	/* qupv3_se1 HS UART */
  #define BT_SE_SIZE      0x00004000u
