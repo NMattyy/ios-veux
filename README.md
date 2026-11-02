@@ -1,6 +1,6 @@
-# ios-veux
+# IOS-Veux
 
-**Apple's iOS 16 running on a Redmi Note 11 Pro 5G.**
+**Apple's iOS 16 running on a Redmi Note 11 Pro 5G (veux).**
 
 This project ports Apple's open-source XNU kernel (xnu-8796, the iOS 16 generation) to the Xiaomi Redmi Note 11 Pro 5G (`veux`, Qualcomm SM6375 / Snapdragon 695). On top of it runs the **unmodified iOS 16.7.16 (20H392) userland of the iPhone X**: launchd, the system daemons, backboardd, SpringBoard and the stock apps.
 
@@ -8,11 +8,10 @@ As of **2026-10-18** the entire patch series, shim and tools have been retargete
 
 > Experimental bring-up, not a usable phone OS. Many things are missing or stubbed (see below), and Apple's security model is mostly switched off. It installs into the `userdata` partition and so **erases Android's user data**.
 
-## What works
+## What works on the device of the original repo (Not tested)
 
 | Area | State |
 | --- | --- |
-| Boot | Stock Xiaomi bootloader → `fastboot boot` of our shim → XNU. Nothing is flashed to the boot partitions |
 | CPU | 6 of the 8 cores (the six Cortex-A55s) via PSCI, 16K pages, GICv3 interrupts, timers |
 | Memory | About 3.95 GiB of the upper DDR bank |
 | Storage | Own UFS host driver; the iOS root is a journaled HFS+ volume in `userdata`, read/write |
@@ -38,7 +37,7 @@ As of **2026-10-18** the entire patch series, shim and tools have been retargete
 
 ```
 ABL (stock Xiaomi bootloader, unlocked)
-  -> fastboot boot shim-boot.img              (temporary; nothing is flashed to boot)
+  -> fastboot flash boot shim-boot.img
      -> shim: own MMU setup, reads the live FDT, loads the payload from the ramdisk
         -> XNU Mach-O + generated Apple Device Tree (ADT) + boot-args
            -> XNU -> UFS driver -> HFS+ root in the userdata partition
@@ -53,12 +52,16 @@ You need a Redmi Note 11 Pro 5G (`veux`, SM6375 variant, listed by Xiaomi as 220
 
 ### 0. Back up the phone
 
-Boot OrangeFox (or any recovery with adb root) temporarily and pull at least `persist`, `modemst1`, `modemst2`, `fsg`, `fsc` and `boot`, `dtbo`, `vbmeta`. They contain per-device calibration data. Keep them off git; `.gitignore` already excludes `backup/`, `dtb/` and `recovery/`.
+Boot OrangeFox (or any recovery with adb root) temporarily and pull at least `persist` (`adb pull persist`), `modemst1.bin`, `modemst2.bin`, `fsg.bin`, `fsc.bin` and `boot.img`, `dtbo.img`, `vbmeta.img` and `vendor_boot` using: 
+- `adb shell ls -l /dev/block/by-name/` to show every partition on the phone
+- `adb exec-out dd if=/dev/block/by-name/partition > backup/partition` to extract the partition (if your phone has A and B partition, extract both)
+They contain per-device calibration data. 
+Keep them off git; `.gitignore` already excludes `backup/`, `dtb/` and `recovery/`.
 
-The shim needs the stock DTB. Unpack your phone's stock `boot.img`:
+The shim needs the stock DTB. Unpack your phone's stock `vendor_boot.img` using tools/unpack_bootimg.py:
 
 ```sh
-python3 tools/unpack_bootv2.py backup/boot.img dtb/boot_unpacked   # -> dtb/boot_unpacked/dtb
+python3 unpack_bootimg.py --boot_img vendor_boot_a.img --out vendor_out/ 
 ```
 
 ### 1. Build the kernel
@@ -128,7 +131,7 @@ fastboot boot shim/out/shim-boot.img
 
 The first boot takes about 4–5 minutes on the Apple logo, then the lock screen appears. Swipe up to unlock. To get back to fastboot, hold Power + Volume down.
 
-### 5. Read the kernel log
+### 5. Read the kernel log (Doesn't work for some reason)
 
 ```sh
 fastboot boot recovery/recovery.img        # OrangeFox, temporary
@@ -137,10 +140,6 @@ adb reboot bootloader
 ```
 
 The log contains crash reports with backtraces (`CRASH name ...`), IOKit traces of backboardd and SpringBoard, and the drivers' `VEUX ...` lines. `tools/veux-crash.py` symbolicates them against the shared cache.
-
-### QEMU
-
-`tools/qemu-veux.py` boots the same kernel on QEMU `virt` with a test RAM-disk root. It is useful for kernel-only changes; see `NOTES.md`.
 
 ## Repository layout
 
